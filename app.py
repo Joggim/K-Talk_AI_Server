@@ -4,7 +4,7 @@ import whisper
 app = Flask(__name__)
 
 # Whisper 모델 로드
-model = whisper.load_model("small")
+model = whisper.load_model("tiny")
 
 @app.route('/transcribe', methods=['POST'])
 def transcribe_audio():
