@@ -6,6 +6,10 @@ app = Flask(__name__)
 # Whisper 모델 로드
 model = whisper.load_model("tiny")
 
+@app.route('/')
+def home():
+    return "Welcome to the API!"  # 기본 메시지를 반환
+    
 @app.route('/transcribe', methods=['POST'])
 def transcribe_audio():
     if 'file' not in request.files:
