@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+*.pyo
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv/
+
+# VSCode
+.vscode/
+
+# MacOS
+.DS_Store
+
+# PyInstaller
+dist/
+build/
+*.spec
+
+# FastAPI / Uvicorn / Logs
+*.log
+*.sqlite3
+*.db
