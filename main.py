@@ -1,10 +1,12 @@
 from fastapi import FastAPI
 from app.api.routes import transcribe
+from app.api.routes import pronunciation
 
 app = FastAPI()
 
 # 라우터 등록
 app.include_router(transcribe.router)
+app.include_router(pronunciation.router)
 
 @app.get("/")
 def root():
