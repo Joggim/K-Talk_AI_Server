@@ -14,7 +14,7 @@ async def transcribe_audio_file(file: UploadFile) -> str:
         shutil.copyfileobj(file.file, buffer)
 
     # STT 수행
-    result = model.transcribe(temp_file_path)
+    result = model.transcribe(temp_file_path,temperature=0.0)
 
     # 임시 파일 삭제
     os.remove(temp_file_path)
