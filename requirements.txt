@@ -7,3 +7,6 @@ pydantic
 torch
 torchaudio
 ffmpeg-python
+transformers
+soundfile
+pydub
