@@ -1,7 +1,6 @@
 import shutil
 import os
 
-
 import torch
 import soundfile as sf
 from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor
@@ -14,9 +13,6 @@ model_name = "kresnik/wav2vec2-large-xlsr-korean"
 processor = Wav2Vec2Processor.from_pretrained(model_name)
 model = Wav2Vec2ForCTC.from_pretrained(model_name)
 model.eval()
-
-
-
 
 async def transcribe_audio_file_wav2vec(file: UploadFile) -> str:
     try:

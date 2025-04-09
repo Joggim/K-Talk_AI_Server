@@ -2,7 +2,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
 
 # Wav2Vec2.0 기반 STT 함수 임포트
-from app.services.whisper import transcribe_audio_file_wav2vec
+from app.services.transcribe import transcribe_audio_file_wav2vec
 
 router = APIRouter()
 
