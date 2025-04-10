@@ -54,4 +54,6 @@ jobs:
             docker image rm ${{ secrets.DOCKERHUB_USERNAME }}/ktalk-ai-server || true
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/ktalk-ai-server
             docker run -d -p 8000:8000 \
-              --name ktalk-ai-server ${{ secrets.DOCKERHUB_USERNAME }}/ktalk-ai-server
+              --name ktalk-ai-server \
+              --restart=always \
+              ${{ secrets.DOCKERHUB_USERNAME }}/ktalk-ai-server
