@@ -2,6 +2,7 @@ from typing import List, Dict, Any, Set, Optional
 from difflib import SequenceMatcher
 from app.services.g2p import convert_to_phonemes
 from app.services.phonology import apply_phonological_variants
+import string
 
 def phoneme_diff(correct: List[str], user: List[str], allowed_variants: Set[str]) -> Dict[str, Any]:
     diff = []
@@ -110,12 +111,14 @@ def phoneme_diff_with_index(
             if correct_phoneme_to_char_index and correct_chars and user_phoneme_to_char_index and user_chars:
                 char_index = correct_phoneme_to_char_index[i] if i < len(correct_phoneme_to_char_index) else -1
                 if char_index not in seen_indices:
-                    seen_indices.add(char_index)
-                    char_errors.append({
-                        "wrong": user_chars[user_phoneme_to_char_index[j]] if j < len(user_phoneme_to_char_index) else "(없음)",
-                        "correct": correct_chars[char_index] if char_index < len(correct_chars) else "(없음)",
-                        "index": char_index
-                    })
+                    correct_char = correct_chars[char_index] if char_index < len(correct_chars) else "(없음)"
+                    if correct_char not in string.punctuation:  # 문장부호 제외
+                        seen_indices.add(char_index)
+                        char_errors.append({
+                            "wrong": user_chars[user_phoneme_to_char_index[j]] if j < len(user_phoneme_to_char_index) else "(없음)",
+                            "correct": correct_char,
+                            "index": char_index
+                        })
 
         # 삽입/삭제 처리
         for i in range(i2 - i1, j2 - j1):
@@ -136,12 +139,14 @@ def phoneme_diff_with_index(
                 if correct_phoneme_to_char_index and correct_chars:
                     char_index = correct_phoneme_to_char_index[i1 + i]
                     if char_index not in seen_indices:
-                        seen_indices.add(char_index)
-                        char_errors.append({
-                            "wrong": "(없음)",
-                            "correct": correct_chars[char_index] if char_index < len(correct_chars) else "(없음)",
-                            "index": char_index
-                        })
+                        correct_char = correct_chars[char_index] if char_index < len(correct_chars) else "(없음)"
+                        if correct_char not in string.punctuation:  # 문장부호 제외
+                            seen_indices.add(char_index)
+                            char_errors.append({
+                                "wrong": "(없음)",
+                                "correct": correct_char,
+                                "index": char_index
+                            })
 
     return {
         "correctPhonemes": correct,
