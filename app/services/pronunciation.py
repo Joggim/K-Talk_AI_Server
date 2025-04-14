@@ -63,17 +63,28 @@ def evaluate_pronunciation(reference: str, user_text: str) -> Dict[str, Any]:
         "errorDetails": phoneme_diff(correct_phonemes, user_phonemes, allowed_variants)
     }
  
-def convert_to_phonemes_with_mapping(text: str):
-    phonemes = []
-    mapping = []  # phoneme index → 글자 index
+def convert_to_phonemes_with_approx_mapping(text: str):
+    phonemes = convert_to_phonemes(text)
     chars = list(text)
+    mapping = []
 
-    for idx, char in enumerate(chars):
-        phs = convert_to_phonemes(char)
-        phonemes.extend(phs)
-        mapping.extend([idx] * len(phs))  # 각 음소는 어떤 글자에서 왔는지
+    # 대략적으로 음소 수를 글자 수로 분배
+    # (각 글자에서 나온 평균 음소 수를 기반으로)
+    approx_ph_per_char = len(phonemes) / len(chars) if chars else 0
 
-    return phonemes, mapping, chars  # char 리스트도 같이 리턴
+    current_char = 0
+    ph_count = 0
+
+    for i in range(len(phonemes)):
+        mapping.append(current_char)
+        ph_count += 1
+
+        # 한 글자당 평균 음소 수만큼 나오면 다음 글자로 이동
+        if ph_count >= approx_ph_per_char and current_char < len(chars) - 1:
+            current_char += 1
+            ph_count = 0
+
+    return phonemes, mapping, chars
 
 
 def phoneme_diff_with_index(
@@ -101,18 +112,18 @@ def phoneme_diff_with_index(
 
             test_pron = correct[:]
             test_pron[i] = user_ph
-            if ''.join(test_pron) in allowed_variants:
-                continue
-
-            # 음소 차이 기록
-            diff.append(f"{user_ph or '(없음)'} → {correct_ph or '(없음)'}")
+            if ''.join(test_pron) not in allowed_variants:
+                diff.append({
+                    "wrong": user_ph,
+                    "correct": correct_ph
+                })
 
             # 글자 오류 기록 (옵션이 있을 경우만)
             if correct_phoneme_to_char_index and correct_chars and user_phoneme_to_char_index and user_chars:
                 char_index = correct_phoneme_to_char_index[i] if i < len(correct_phoneme_to_char_index) else -1
                 if char_index not in seen_indices:
                     correct_char = correct_chars[char_index] if char_index < len(correct_chars) else "(없음)"
-                    if correct_char not in string.punctuation:  # 문장부호 제외
+                    if correct_char not in string.punctuation and correct_char != " ":  # 문장부호 제외
                         seen_indices.add(char_index)
                         char_errors.append({
                             "wrong": user_chars[user_phoneme_to_char_index[j]] if j < len(user_phoneme_to_char_index) else "(없음)",
@@ -125,22 +136,22 @@ def phoneme_diff_with_index(
             if j1 + i < len(user):
                 p = user[j1 + i]
                 test_pron = correct + [p]
-                if ''.join(test_pron) not in allowed_variants:
-                    diff.append(f"{p} → (없음)")
+                # if ''.join(test_pron) not in allowed_variants:
+                #     diff.append(f"{p} → (없음)")
 
         for i in range(j2 - j1, i2 - i1):
             if i1 + i < len(correct):
                 p = correct[i1 + i]
                 test_pron = user + [p]
-                if ''.join(test_pron) not in allowed_variants:
-                    diff.append(f"(없음) → {p}")
+                # if ''.join(test_pron) not in allowed_variants:
+                #     diff.append(f"(없음) → {p}")
 
                 # 글자 오류 기록 (삭제의 경우)
                 if correct_phoneme_to_char_index and correct_chars:
                     char_index = correct_phoneme_to_char_index[i1 + i]
                     if char_index not in seen_indices:
                         correct_char = correct_chars[char_index] if char_index < len(correct_chars) else "(없음)"
-                        if correct_char not in string.punctuation:  # 문장부호 제외
+                        if correct_char not in string.punctuation and correct_char != " ":  # 문장부호 제외
                             seen_indices.add(char_index)
                             char_errors.append({
                                 "wrong": "(없음)",
@@ -156,8 +167,8 @@ def phoneme_diff_with_index(
     }
     
 def evaluate_pronunciation_with_index(reference: str, user_text: str) -> Dict[str, Any]:
-    correct_phonemes, correct_mapping, correct_chars = convert_to_phonemes_with_mapping(reference)
-    user_phonemes, user_mapping, user_chars = convert_to_phonemes_with_mapping(user_text)
+    correct_phonemes, correct_mapping, correct_chars = convert_to_phonemes_with_approx_mapping(reference)
+    user_phonemes, user_mapping, user_chars = convert_to_phonemes_with_approx_mapping(user_text)
 
     allowed_variants = apply_phonological_variants(''.join(correct_phonemes))
 
