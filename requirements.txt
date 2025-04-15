@@ -11,3 +11,4 @@ transformers
 soundfile
 pydub
 hgtk
+six
