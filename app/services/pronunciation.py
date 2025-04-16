@@ -79,127 +79,70 @@ def phoneme_diff_with_index(
     char_errors = {}
     seen_indices = set()
 
-    matcher = SequenceMatcher(None, correct, user)
+    # 필터링: 무시할 음소 제외한 인덱스 추출
+    def valid_indices(phonemes):
+        return [i for i, p in enumerate(phonemes) if not is_ignorable_phoneme(p)]
+
+    filtered_correct_indices = valid_indices(correct)
+    filtered_user_indices = valid_indices(user)
+
+    filtered_correct = [correct[i] for i in filtered_correct_indices]
+    filtered_user = [user[i] for i in filtered_user_indices]
+
+    matcher = SequenceMatcher(None, filtered_correct, filtered_user)
 
     for tag, i1, i2, j1, j2 in matcher.get_opcodes():
         if tag == "equal":
             continue
 
         # 교체
-        for i, j in zip(range(i1, i2), range(j1, j2)):
-            correct_ph = correct[i] if i < len(correct) else ""
-            user_ph = user[j] if j < len(user) else ""
+        for fi, fj in zip(range(i1, i2), range(j1, j2)):
+            i = filtered_correct_indices[fi]
+            j = filtered_user_indices[fj]
+            correct_ph = correct[i]
+            user_ph = user[j]
 
             test_pron = correct[:]
             test_pron[i] = user_ph
             if test_pron == correct or ''.join(test_pron) in allowed_variants:
                 continue
 
-            if is_ignorable_phoneme(user_ph) or is_ignorable_phoneme(correct_ph):
+            diff.append({"wrong": user_ph, "correct": correct_ph})
+
+            char_idx = correct_phoneme_to_char_index[i]
+            if char_idx not in char_errors and not is_ignorable_phoneme(correct_chars[char_idx]):
+                char_errors[char_idx] = {
+                    "wrong": user_chars[char_idx],
+                    "correct": correct_chars[char_idx],
+                    "index": char_idx
+                }
+
+        # 삽입 (사용자 발음이 더 많음)
+        for fj in range(j1 + (i2 - i1), j2):
+            j = filtered_user_indices[fj]
+            user_ph = user[j]
+
+            if is_ignorable_phoneme(user_ph):
                 continue
 
-            diff.append({"wrong": user_ph or "(없음)", "correct": correct_ph or "(없음)"})
+            diff.append({"wrong": user_ph, "correct": "(없음)"})
 
-            if i < len(correct_phoneme_to_char_index):
-                char_idx = correct_phoneme_to_char_index[i]
-                if char_idx not in char_errors:
-                    correct_char = correct_chars[char_idx] if char_idx < len(correct_chars) else "(없음)"
-                    if is_ignorable_phoneme(correct_char):
-                        continue
-                    user_char = user_chars[char_idx] if char_idx < len(user_chars) else "(없음)"
-                    char_errors[char_idx] = {
-                        "wrong": user_char,
-                        "correct": correct_char,
-                        "index": char_idx
-                    }
+        # 삭제 (정답 발음이 더 많음)
+        for fi in range(i1 + (j2 - j1), i2):
+            i = filtered_correct_indices[fi]
+            correct_ph = correct[i]
 
-        # 삽입
-        for k in range(i2 - i1, j2 - j1):
-            j = j1 + k
-            if j < len(user):
-                user_ph = user[j]
-                test_pron = correct + [user_ph]
-                if test_pron == correct or ''.join(test_pron) in allowed_variants:
-                    continue
-
-                if is_ignorable_phoneme(user_ph):
-                    continue
-
-                diff.append({"wrong": user_ph, "correct": "(없음)"})
-                nearest_i = i1 + k - 1 if (i1 + k - 1) < len(correct_phoneme_to_char_index) else len(correct_chars) - 1
-                if 0 <= nearest_i < len(correct_phoneme_to_char_index):
-                    char_idx = correct_phoneme_to_char_index[nearest_i]
-                    if char_idx not in char_errors:
-                        correct_char = correct_chars[char_idx] if char_idx < len(correct_chars) else "(없음)"
-                        if is_ignorable_phoneme(correct_char):
-                            continue
-                        user_char = user_chars[char_idx] if char_idx < len(user_chars) else "(없음)"
-                        char_errors[char_idx] = {
-                            "wrong": user_char,
-                            "correct": correct_char,
-                            "index": char_idx
-                        }
-
-        # 삭제
-        for k in range(j2 - j1, i2 - i1):
-            i = i1 + k
-            if i < len(correct):
-                correct_ph = correct[i]
-                test_pron = user + [correct_ph]
-                if test_pron == correct or ''.join(test_pron) in allowed_variants:
-                    continue
-
-                if is_ignorable_phoneme(correct_ph):
-                    continue
-
-                diff.append({"wrong": "(없음)", "correct": correct_ph})
-                if i < len(correct_phoneme_to_char_index):
-                    char_idx = correct_phoneme_to_char_index[i]
-                    if char_idx not in char_errors:
-                        correct_char = correct_chars[char_idx] if char_idx < len(correct_chars) else "(없음)"
-                        if is_ignorable_phoneme(correct_char):
-                            continue
-                        user_char = user_chars[char_idx] if char_idx < len(user_chars) else "(없음)"
-                        char_errors[char_idx] = {
-                            "wrong": user_char,
-                            "correct": correct_char,
-                            "index": char_idx
-                        }
-
-    # 문자 단위 비교
-    all_char_indices = set(correct_phoneme_to_char_index + user_phoneme_to_char_index)
-
-    for char_index in all_char_indices:
-        if char_index in seen_indices:
-            continue
-
-        correct_char = correct_chars[char_index] if char_index < len(correct_chars) else "(없음)"
-        user_char = user_chars[char_index] if char_index < len(user_chars) else "(없음)"
-
-        if is_ignorable_phoneme(correct_char):
-            continue
-
-        correct_ph_indices = [i for i, x in enumerate(correct_phoneme_to_char_index) if x == char_index]
-        user_ph_indices = [i for i, x in enumerate(user_phoneme_to_char_index) if x == char_index]
-
-        correct_sub = [correct[i] for i in correct_ph_indices if i < len(correct)]
-        user_sub = [user[i] for i in user_ph_indices if i < len(user)]
-
-        if correct_sub != user_sub:
-            test_pron = correct[:]
-            for i, ph in zip(correct_ph_indices, user_sub):
-                if i < len(test_pron):
-                    test_pron[i] = ph
-
-            if test_pron == correct or ''.join(test_pron) in allowed_variants:
+            if is_ignorable_phoneme(correct_ph):
                 continue
 
-            seen_indices.add(char_index)
-            if char_index not in char_errors:
-                char_errors[char_index] = {
-                    "wrong": user_char,
-                    "correct": correct_char,
-                    "index": char_index
+            diff.append({"wrong": "(없음)", "correct": correct_ph})
+
+            char_idx = correct_phoneme_to_char_index[i]
+            if char_idx not in char_errors and not is_ignorable_phoneme(correct_chars[char_idx]):
+                char_errors[char_idx] = {
+                    "wrong": user_chars[char_idx] if char_idx < len(user_chars) else "(없음)",
+                    "correct": correct_chars[char_idx],
+                    "index": char_idx
                 }
 
     return {
@@ -209,6 +152,7 @@ def phoneme_diff_with_index(
         "pronunciationErrors": list(char_errors.values()),
         "passed": len(char_errors) == 0
     }
+
   
 def evaluate_pronunciation_with_index(reference: str, user_text: str) -> Dict[str, Any]:
     correct_phonemes, correct_mapping, correct_chars = convert_to_phonemes_with_mapping(reference)
