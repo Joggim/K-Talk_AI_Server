@@ -1,1 +1,0 @@
-# Request/Response 모델 정의 (Pydantic)
