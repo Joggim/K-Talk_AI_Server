@@ -1,7 +1,7 @@
 from typing import List, Dict, Any, Set, Optional
 from difflib import SequenceMatcher
-from app.services.g2p import convert_to_phonemes, convert_to_phonemes_with_mapping
-from app.services.phonology import apply_phonological_variants
+from app.services.g2p_service import convert_to_phonemes, convert_to_phonemes_with_mapping
+from app.services.phonology_service import apply_phonological_variants
 import string
 
 def phoneme_diff(correct: List[str], user: List[str], allowed_variants: Set[str]) -> Dict[str, Any]:
