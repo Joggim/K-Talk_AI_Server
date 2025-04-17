@@ -1,12 +1,19 @@
 from fastapi import FastAPI
 from app.api.routes import stt_api
-from app.api.routes import pronunciation
+from app.api.routes import feedback_api
+from app.api.routes import talkbot_api
+import os
+from dotenv import load_dotenv
+
+# .env 파일에서 환경변수 로드
+load_dotenv()
 
 app = FastAPI()
 
 # 라우터 등록
 app.include_router(stt_api.router)
-app.include_router(pronunciation.router)
+app.include_router(feedback_api.router)
+app.include_router(talkbot_api.router)
 
 @app.get("/")
 def root():

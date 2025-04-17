@@ -6,7 +6,7 @@ from app.services.stt_service import transcribe_audio_file_wav2vec
 
 router = APIRouter()
 
-@router.post("/transcribe")
+@router.post("/stt")
 async def transcribe(file: UploadFile = File(...)):
     try:
         text = await transcribe_audio_file_wav2vec(file)
