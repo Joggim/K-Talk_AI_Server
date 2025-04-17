@@ -31,9 +31,9 @@ class GrammarRequest(BaseModel):
     text: str  # 사용자 발화 (STT 결과)
 
 @router.post("/feedback/grammar")
-async def get_grammar_feedback(req: GrammarRequest):
+async def get_grammar_feedback_endpoint(req: GrammarRequest):
     try:
-        feedback = get_grammar_feedback(req.text)
+        feedback = await get_grammar_feedback(req.text)
         return {"grammarFeedback": feedback}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
