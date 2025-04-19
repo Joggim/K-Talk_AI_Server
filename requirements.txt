@@ -7,3 +7,7 @@ pydantic
 torch
 torchaudio
 ffmpeg-python
+hgtk
+langchain
+langchain_openai
+dotenv

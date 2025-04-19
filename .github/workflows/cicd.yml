@@ -56,4 +56,5 @@ jobs:
             docker run -d -p 8000:8000 \
               --name ktalk-ai-server \
               --restart=always \
+              --env-file ~/k-talk-ai/.env \
               ${{ secrets.DOCKERHUB_USERNAME }}/ktalk-ai-server
