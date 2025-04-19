@@ -11,3 +11,4 @@ hgtk
 langchain
 langchain_openai
 dotenv
+soundfile
