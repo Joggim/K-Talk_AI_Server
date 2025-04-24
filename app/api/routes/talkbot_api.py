@@ -20,19 +20,18 @@ async def chat_message(
         pronunciation_feedback = evaluate_pronunciation_with_index(transcription, raw_transcription)
         pronunciation_errors = pronunciation_feedback.get("pronunciationErrors")
         
-        messages = [
-            {
-                "content": transcription,
-                "isFeedback": bool(grammar_feedback.get("isFeedback") or pronunciation_errors),
-                "feedback": {
-                    "grammar": grammar_feedback,
-                    "pronunciation": {
-                        "pronunciationErrors": pronunciation_errors
-                    }
-                },
-                "modelAudioUrl": "audio_path" # tts 구현하고 연결
+        messages = {
+            "content": transcription,
+            "isFeedback": True,
+            "feedback": {
+                "grammar": grammar_feedback if grammar_feedback.get("isFeedback") else None,
+                "pronunciation": {
+                    "pronunciationErrors": pronunciation_errors if not pronunciation_feedback.get("passed") else None
+                }
             },
-        ]
+            "userAudioUrl": "audio_path",
+            "modelAudioUrl": "audio_path" # tts 구현하고 연결
+        }
 
         return messages
     except Exception as e:
@@ -47,7 +46,7 @@ async def chat_response(sentence: str = Form(...)):
     try:
         reply = get_bot_reply(sentence)
         return {
-            "korean": reply.get("korean", "알겠습니다!"),
+            "korean": reply.get("content", "알겠습니다!"),
             "translation": reply.get("translation", "Okay!"),
             "modelAudioUrl": "audio_path" # tts 구현하고 연결
         }
