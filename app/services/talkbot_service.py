@@ -18,7 +18,7 @@ Respond naturally in Korean, continuing the conversation in an engaging way. Fol
 5. Output must be in the following JSON format:
 
 {{
-  "korean": "your natural reply in Korean",
+  "content": "your natural reply in Korean",
   "translation": "your reply translated to English"
 }}
 
@@ -52,6 +52,6 @@ def get_bot_reply(sentence: str) -> dict:
     except json.JSONDecodeError:
         print("❗️Chatbot 응답 파싱 실패:\n", raw)
         return {
-            "korean": "잘 이해했어요!",
+            "content": "잘 이해했어요!",
             "translation": "Got it!"
         }
