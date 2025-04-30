@@ -28,3 +28,5 @@ build/
 *.log
 *.sqlite3
 *.db
+
+*.json
