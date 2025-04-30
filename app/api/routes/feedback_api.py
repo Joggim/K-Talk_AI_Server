@@ -23,14 +23,6 @@ async def evaluate_audio(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
-@router.post("/feedback/pronunciation1")
-async def evaluate_pronunciation_route(body: PronunciationRequest):
-    try:
-        result = evaluate_pronunciation(body.reference, body.user_text)
-        return result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/feedback/grammar")
 async def get_grammar_feedback_endpoint(req: GrammarRequest):
