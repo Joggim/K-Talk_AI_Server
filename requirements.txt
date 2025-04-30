@@ -15,3 +15,5 @@ six
 langchain
 langchain_openai
 dotenv
+google-cloud-texttospeech
+protobuf==3.20.*
