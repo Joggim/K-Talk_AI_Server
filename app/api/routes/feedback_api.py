@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from app.services.pronunciation_service import evaluate_pronunciation_with_index, evaluate_pronunciation
+from app.services.pronunciation_service import evaluate_pronunciation_with_index
 from app.services.stt_service import transcribe_audio_file_wav2vec
 from app.services.grammar_service import get_grammar_feedback
 from app.api.schemas.feedback import PronunciationRequest, GrammarRequest 
