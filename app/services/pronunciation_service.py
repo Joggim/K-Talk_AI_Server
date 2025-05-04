@@ -3,8 +3,14 @@ from difflib import SequenceMatcher
 from app.services.g2p_service import convert_to_phonemes_with_mapping
 from app.services.phonology_service import apply_phonological_variants
 
-def is_ignorable_phoneme(ph: str) -> bool:
-    return ph in {"", " ", "\n"}
+def safe_get(chars, mapping, idx):
+    if idx is None:
+        return ""
+    if 0 <= idx < len(mapping):
+        mapped = mapping[idx]
+        if 0 <= mapped < len(chars):
+            return chars[mapped]
+    return ""
 
 def diff_by_type(
     correct_phs,
@@ -30,33 +36,35 @@ def diff_by_type(
         for offset in range(max(i2 - i1, j2 - j1)):
             correct_idx = i1 + offset if i1 + offset < len(correct_phs) else None
             user_idx = j1 + offset if j1 + offset < len(user_phs) else None
-            
-            cp = correct_phs[correct_idx] if tag != "insert" else ""
-            up = user_phs[user_idx] if tag != "delete" else ""
-            
+
+            cp = correct_phs[correct_idx] if tag != "insert" and correct_idx is not None else ""
+            up = user_phs[user_idx] if tag != "delete" and user_idx is not None else ""
+
             # 허용된 변형이면 무시
             if cp and up:
                 test = correct_phs[:]
-                test[correct_idx] = up
+                if correct_idx is not None:
+                    test[correct_idx] = up
                 if ''.join(test) in allowed_variants:
                     continue
-            
+
             # 공백이면 무시
-            if cp == "" and up == " " or cp == " " and up == "":
+            if (cp == "" and up == " ") or (cp == " " and up == ""):
                 continue
-            
+
             # diff 저장
             diff.append({
                 "wrong": up,
                 "correct": cp
             })
 
+            # 기본 인덱스는 correct 기준
+            mapped_idx = correct_mapping[correct_idx] if correct_idx is not None and correct_idx < len(correct_mapping) else -1
+
             # 글자 오류 기록
             if tag == "insert" and user_idx is not None:
-                # wrong 인덱스는 그대로
-                wrong_mapping_idx = user_mapping[user_idx]
+                wrong_char = safe_get(user_chars, user_mapping, user_idx)
 
-                # correct 인덱스는 종성일 경우 -1 보정
                 if correct_idx is not None and user_types[user_idx] == 2 and correct_idx > 0:
                     correct_mapping_idx = correct_mapping[correct_idx - 1]
                 elif correct_idx is not None:
@@ -64,36 +72,30 @@ def diff_by_type(
                 else:
                     correct_mapping_idx = -1
 
-                wrong_char = user_chars[wrong_mapping_idx] if wrong_mapping_idx < len(user_chars) else ""
-                correct_char = correct_chars[correct_mapping_idx] if correct_mapping_idx != -1 and correct_mapping_idx < len(correct_chars) else ""
+                correct_char = correct_chars[correct_mapping_idx] if 0 <= correct_mapping_idx < len(correct_chars) else ""
                 mapped_idx = correct_mapping_idx
 
             elif tag == "delete" and correct_idx is not None:
-                # correct 인덱스는 그대로
                 correct_mapping_idx = correct_mapping[correct_idx]
 
-                # wrong 인덱스는 종성일 경우 -1 보정
                 if user_idx is not None and correct_types[correct_idx] == 2 and user_idx > 0:
-                    wrong_mapping_idx = user_mapping[user_idx - 1]
-                elif user_idx is not None:
-                    wrong_mapping_idx = user_mapping[user_idx]
+                    wrong_char = safe_get(user_chars, user_mapping, user_idx - 1)
                 else:
-                    wrong_mapping_idx = -1
+                    wrong_char = safe_get(user_chars, user_mapping, user_idx)
 
-                wrong_char = user_chars[wrong_mapping_idx] if wrong_mapping_idx != -1 and wrong_mapping_idx < len(user_chars) else ""
                 correct_char = correct_chars[correct_mapping_idx] if correct_mapping_idx < len(correct_chars) else ""
                 mapped_idx = correct_mapping_idx
-                
+
             elif tag == "replace" and user_idx is not None and correct_idx is not None:
                 mapped_idx = correct_mapping[correct_idx]
-                if correct_types[correct_idx] == 2 and user_phs[user_idx] == " " and user_idx > 0:
-                    wrong_mapping_idx = user_mapping[user_idx - 1]
-                else:
-                    wrong_mapping_idx = user_mapping[user_idx]
 
-                wrong_char = user_chars[wrong_mapping_idx] if wrong_mapping_idx < len(user_chars) else ""
+                if correct_types[correct_idx] == 2 and user_phs[user_idx] == " " and user_idx > 0:
+                    wrong_char = safe_get(user_chars, user_mapping, user_idx - 1)
+                else:
+                    wrong_char = safe_get(user_chars, user_mapping, user_idx)
+
                 correct_char = correct_chars[mapped_idx] if mapped_idx < len(correct_chars) else ""
-                
+
             else:
                 mapped_idx = -1
                 wrong_char = ""
@@ -124,7 +126,7 @@ def diff_by_type(
         "pronunciationErrors": list(char_errors.values()),
         "errorAnalysis": error_analysis
     }
-    
+
 def evaluate_pronunciation_with_index(reference: str, user_text: str) -> Dict[str, Any]:
     correct_phonemes, correct_mapping, correct_chars, correct_types = convert_to_phonemes_with_mapping(reference)
     user_phonemes, user_mapping, user_chars, user_types = convert_to_phonemes_with_mapping(user_text)
@@ -143,6 +145,13 @@ def evaluate_pronunciation_with_index(reference: str, user_text: str) -> Dict[st
         allowed_variants=allowed_variants
     )
 
+    filtered_user_phonemes = [ph for ph in user_phonemes if ph.strip() != ""]
+
+    passed = (
+        len(result["pronunciationErrors"]) == 0 and
+        len(filtered_user_phonemes) == len(correct_phonemes)
+    )
+    
     return {
         "reference": reference,
         "userText": user_text,
@@ -153,5 +162,5 @@ def evaluate_pronunciation_with_index(reference: str, user_text: str) -> Dict[st
         },
         "pronunciationErrors": result["pronunciationErrors"],
         "errorAnalysis": result["errorAnalysis"],
-        "passed": len(result["pronunciationErrors"]) == 0
+        "passed": passed
     }
