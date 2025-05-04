@@ -2,6 +2,7 @@ from typing import List, Dict, Any, Set
 from difflib import SequenceMatcher
 from app.services.g2p_service import convert_to_phonemes_with_mapping
 from app.services.phonology_service import apply_phonological_variants
+import string
 
 def safe_get(chars, mapping, idx):
     if idx is None:
@@ -49,7 +50,7 @@ def diff_by_type(
                     continue
 
             # 공백이면 무시
-            if (cp == "" and up == " ") or (cp == " " and up == ""):
+            if (cp == "" and up == " ") or (cp == " " and up == "") or (cp in string.punctuation):
                 continue
 
             # diff 저장
