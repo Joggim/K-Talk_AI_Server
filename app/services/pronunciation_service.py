@@ -147,10 +147,11 @@ def evaluate_pronunciation_with_index(reference: str, user_text: str) -> Dict[st
     )
 
     filtered_user_phonemes = [ph for ph in user_phonemes if ph.strip() != ""]
+    filtered_correct_phonemes = [ph for ph in correct_phonemes if ph.strip() != ""]
 
     passed = (
         len(result["pronunciationErrors"]) == 0 and
-        len(filtered_user_phonemes) == len(correct_phonemes)
+        len(filtered_user_phonemes) == len(filtered_correct_phonemes)
     )
     
     return {
