@@ -22,7 +22,9 @@ def diff_by_type(
     user_mapping,
     correct_chars,
     user_chars,
-    allowed_variants
+    allowed_variants,
+    correct_original_phs,
+    user_original_phs
 ):
     diff = []
     char_errors = {}
@@ -52,6 +54,12 @@ def diff_by_type(
             # 공백이면 무시
             if (cp == "" and up == " ") or (cp == " " and up == "") or (cp in string.punctuation):
                 continue
+            
+            # 원본 자모가 같은 경우 오류로 간주하지 않음
+            if correct_idx is not None and user_idx is not None:
+                if correct_idx < len(correct_original_phs) and user_idx < len(user_original_phs):
+                    if correct_original_phs[correct_idx] == user_original_phs[user_idx]:
+                        continue
 
             # diff 저장
             diff.append({
@@ -129,8 +137,8 @@ def diff_by_type(
     }
 
 def evaluate_pronunciation_with_index(reference: str, user_text: str) -> Dict[str, Any]:
-    correct_phonemes, correct_mapping, correct_chars, correct_types = convert_to_phonemes_with_mapping(reference)
-    user_phonemes, user_mapping, user_chars, user_types = convert_to_phonemes_with_mapping(user_text)
+    correct_phonemes, correct_mapping, correct_chars, correct_types, correct_original_phs = convert_to_phonemes_with_mapping(reference)
+    user_phonemes, user_mapping, user_chars, user_types, user_original_phs = convert_to_phonemes_with_mapping(user_text)
 
     allowed_variants = apply_phonological_variants(''.join(correct_phonemes))
 
@@ -143,14 +151,17 @@ def evaluate_pronunciation_with_index(reference: str, user_text: str) -> Dict[st
         user_mapping=user_mapping,
         correct_chars=correct_chars,
         user_chars=user_chars,
-        allowed_variants=allowed_variants
+        allowed_variants=allowed_variants,
+        correct_original_phs=correct_original_phs,
+        user_original_phs=user_original_phs
     )
 
     filtered_user_phonemes = [ph for ph in user_phonemes if ph.strip() != ""]
+    filtered_correct_phonemes = [ph for ph in correct_phonemes if ph.strip() != ""]
 
     passed = (
         len(result["pronunciationErrors"]) == 0 and
-        len(filtered_user_phonemes) == len(correct_phonemes)
+        len(filtered_user_phonemes) == len(filtered_correct_phonemes)
     )
     
     return {
