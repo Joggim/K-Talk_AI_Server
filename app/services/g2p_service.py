@@ -22,6 +22,7 @@ def convert_to_phonemes_with_mapping(text: str) -> Tuple[List[str], List[int], L
     mapping = []
     phoneme_types = []  # 0: 초성, 1: 중성, 2: 종성
     chars = list(g2p_text)
+    original_chars = list(text)
 
     for i, char in enumerate(chars):
         if hgtk.checker.is_hangul(char):
@@ -44,5 +45,7 @@ def convert_to_phonemes_with_mapping(text: str) -> Tuple[List[str], List[int], L
             phonemes.append(char)
             mapping.append(i)
             phoneme_types.append(-1)  # 한글 아님
+            
+    original_phonemes = list(hangul_to_jamo(text))
 
-    return phonemes, mapping, chars, phoneme_types
+    return phonemes, mapping, chars, phoneme_types, original_phonemes
