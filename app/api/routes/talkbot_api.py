@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from pydantic import BaseModel
 from app.services.talkbot_service import get_bot_reply
-from app.services.stt_service import transcribe_audio_file_wav2vec, transcribe_audio_file_whisper
+from app.services.stt_service import transcribe_wav2vec, transcribe_whisper
 from app.services.grammar_service import get_grammar_feedback
 from app.services.pronunciation_service import evaluate_pronunciation_with_index
 
@@ -19,7 +19,7 @@ async def chat_message(
     사용자 음성 입력을 받아 피드백 생성
     """
     try:
-        raw_transcription = await transcribe_audio_file_wav2vec(file)
+        raw_transcription = await transcribe_wav2vec(file)
         grammar_feedback = await get_grammar_feedback(transcription)
         pronunciation_feedback = evaluate_pronunciation_with_index(transcription, raw_transcription)
         pronunciation_errors = pronunciation_feedback.get("pronunciationErrors")
