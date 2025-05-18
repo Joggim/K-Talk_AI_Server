@@ -102,7 +102,8 @@ async def transcribe_google_stt(file: UploadFile) -> str:
         config = speech.RecognitionConfig(
             encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
             sample_rate_hertz=16000,
-            language_code="ko-KR"
+            language_code="ko-KR",
+            enable_automatic_punctuation=True
         )
 
         response = client.recognize(config=config, audio=audio)
