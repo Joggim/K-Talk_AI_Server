@@ -22,7 +22,7 @@ whisper_model = whisper.load_model("base")
 def convert_to_wav_linear16(input_path: str, output_path: str):
     audio = AudioSegment.from_file(input_path)
     audio = audio.set_frame_rate(16000).set_channels(1)
-    audio.export(output_path, format="wav")
+    audio.export(output_path, format="wav", codec="pcm_s16le")
 
 async def transcribe_wav2vec(file: UploadFile) -> str:
     try:
