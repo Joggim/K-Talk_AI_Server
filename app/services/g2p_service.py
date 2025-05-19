@@ -16,27 +16,36 @@ def convert_to_phonemes(text: str) -> List[str]:
     g2p_result = g2p(text)         # 예: "조아해"
     return list(hangul_to_jamo(g2p_result))  # 예: ['ㅈ', 'ㅗ', 'ㅇ', 'ㅏ', 'ㅎ', 'ㅐ']
 
-def convert_to_phonemes_with_mapping(text: str) -> Tuple[List[str], List[int], List[str]]:
-    """
-    G2P 변환 + 정확한 음소-글자 매핑
-    """
-    g2p_text = g2p(text)  # 예: "좋아해" -> "조아해"
+def convert_to_phonemes_with_mapping(text: str) -> Tuple[List[str], List[int], List[str], List[int]]:
+    g2p_text = g2p(text)  # 예: "좋아해" → "조아해"
     phonemes = []
     mapping = []
+    phoneme_types = []  # 0: 초성, 1: 중성, 2: 종성
     chars = list(g2p_text)
+    original_chars = list(text)
 
     for i, char in enumerate(chars):
         if hgtk.checker.is_hangul(char):
             try:
                 cho, jung, jong = hgtk.letter.decompose(char)
-                parts = [cho, jung] + ([jong] if jong else [])
-                phonemes.extend(parts)
-                mapping.extend([i] * len(parts))
+                parts = [(cho, 0), (jung, 1)]
+                if jong:
+                    parts.append((jong, 2))
+
+                for phoneme, p_type in parts:
+                    phonemes.append(phoneme)
+                    mapping.append(i)
+                    phoneme_types.append(p_type)
+
             except hgtk.exception.NotHangulException:
                 phonemes.append(char)
                 mapping.append(i)
+                phoneme_types.append(-1)  # 한글 아님
         else:
             phonemes.append(char)
             mapping.append(i)
+            phoneme_types.append(-1)  # 한글 아님
+            
+    original_phonemes = list(hangul_to_jamo(text))
 
-    return phonemes, mapping, chars
+    return phonemes, mapping, chars, phoneme_types, original_phonemes

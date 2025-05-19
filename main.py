@@ -2,7 +2,11 @@ from fastapi import FastAPI
 from app.api.routes import stt_api
 from app.api.routes import feedback_api
 from app.api.routes import talkbot_api
+ KT-25
 from app.api.routes import errortype_api
+
+from app.api.routes import tts_api
+ main
 import os
 from dotenv import load_dotenv
 
@@ -15,7 +19,11 @@ app = FastAPI()
 app.include_router(stt_api.router)
 app.include_router(feedback_api.router)
 app.include_router(talkbot_api.router)
+KT-25
 app.include_router(errortype_api.router)
+
+app.include_router(tts_api.router)
+main
 
 @app.get("/")
 def root():

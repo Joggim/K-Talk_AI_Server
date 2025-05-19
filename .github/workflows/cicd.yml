@@ -57,4 +57,5 @@ jobs:
               --name ktalk-ai-server \
               --restart=always \
               --env-file ~/k-talk-ai/.env \
+              -v /home/ubuntu/k-talk-ai/credentials.json:/app/credentials.json \
               ${{ secrets.DOCKERHUB_USERNAME }}/ktalk-ai-server
