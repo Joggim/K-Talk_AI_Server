@@ -32,7 +32,13 @@ def classify_error_rule_final(target, user, prev, next_, pos):
     elif target in vowels and user in vowels and target != user:
         error_type = "모음혼동"
 
+
+    elif pos == 2 and target in consonants and (user != target):
+        # 종성 위치 + 자음이어야 할 자리인데, 공백이거나 잘못 발음한 경우
+        error_type = "받침오류"
+
     elif target in consonants and user in consonants and target != user:
-        error_type = "받침오류" if pos == 2 else "자음혼동"
+        # 종성이 아닌 자리에 자음 혼동
+        error_type = "자음혼동"
 
     return f"{error_type}" if error_type != "미분류" else "미분류"
