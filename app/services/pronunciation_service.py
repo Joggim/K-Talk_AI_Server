@@ -124,12 +124,17 @@ def diff_by_type(
             next_ph = correct_phs[correct_idx + 1] if correct_idx is not None and correct_idx + 1 < len(correct_phs) else ""
             jamo_type = correct_types[correct_idx] if correct_idx is not None and correct_idx < len(correct_types) else -1
 
+            user_char_idx = user_mapping[user_idx] if user_idx is not None and user_idx < len(user_mapping) else - 1
+            if jamo_type == 2 and up == "":
+                user_char_idx -= 1
+            
             error_analysis.append({
                 "target": cp,
                 "user": up,
-                "jamo_index_in_syllable": jamo_type,
+                "jamoIndex": jamo_type,
                 "prev": prev,
-                "next": next_ph
+                "next": next_ph,
+                "errorIndex": user_char_idx
             })
 
     return {
