@@ -19,3 +19,5 @@ google-cloud-texttospeech
 google-cloud-speech
 protobuf==3.20.*
 scikit-learn
+IPAkor
+phonemizer

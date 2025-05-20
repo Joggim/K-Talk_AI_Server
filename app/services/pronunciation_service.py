@@ -3,6 +3,8 @@ from difflib import SequenceMatcher
 from app.services.g2p_service import convert_to_phonemes_with_mapping
 from app.services.phonology_service import apply_phonological_variants
 import string
+from IPAkor.transcription import UniTranscript
+t = UniTranscript()
 
 def safe_get(chars, mapping, idx):
     if idx is None:
@@ -174,6 +176,8 @@ def evaluate_pronunciation_with_index(reference: str, user_text: str) -> Dict[st
     return {
         "reference": reference,
         "userText": user_text,
+        "correctIpa": t.transcribator(reference),
+        "userIpa": t.transcribator(user_text),
         "errorDetails": {
             "correctPhonemes": correct_phonemes,
             "userPhonemes": user_phonemes,
