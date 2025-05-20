@@ -176,7 +176,6 @@ def evaluate_pronunciation_with_index(reference: str, user_text: str) -> Dict[st
     return {
         "reference": reference,
         "userText": user_text,
-        "correctIpa": t.transcribator(reference),
         "userIpa": t.transcribator(user_text),
         "errorDetails": {
             "correctPhonemes": correct_phonemes,
