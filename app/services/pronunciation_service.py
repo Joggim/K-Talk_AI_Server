@@ -3,6 +3,8 @@ from difflib import SequenceMatcher
 from app.services.g2p_service import convert_to_phonemes_with_mapping
 from app.services.phonology_service import apply_phonological_variants
 import string
+from IPAkor.transcription import UniTranscript
+t = UniTranscript()
 
 def safe_get(chars, mapping, idx):
     if idx is None:
@@ -122,12 +124,17 @@ def diff_by_type(
             next_ph = correct_phs[correct_idx + 1] if correct_idx is not None and correct_idx + 1 < len(correct_phs) else ""
             jamo_type = correct_types[correct_idx] if correct_idx is not None and correct_idx < len(correct_types) else -1
 
+            user_char_idx = user_mapping[user_idx] if user_idx is not None and user_idx < len(user_mapping) else - 1
+            if jamo_type == 2 and up == "":
+                user_char_idx -= 1
+            
             error_analysis.append({
                 "target": cp,
                 "user": up,
-                "jamo_index_in_syllable": jamo_type,
+                "jamoIndex": jamo_type,
                 "prev": prev,
-                "next": next_ph
+                "next": next_ph,
+                "errorIndex": user_char_idx
             })
 
     return {
@@ -174,6 +181,7 @@ def evaluate_pronunciation_with_index(reference: str, user_text: str) -> Dict[st
     return {
         "reference": reference,
         "userText": user_text,
+        "userIpa": t.transcribator(user_text),
         "errorDetails": {
             "correctPhonemes": correct_phonemes,
             "userPhonemes": user_phonemes,

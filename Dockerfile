@@ -1,6 +1,14 @@
 FROM python:3.10
 
-RUN apt-get update && apt-get install -y ffmpeg libsndfile1
+RUN apt-get update && apt-get install -y \
+    default-jdk \
+    espeak-ng \
+    ffmpeg \
+    libsndfile1 \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 WORKDIR /app
 
