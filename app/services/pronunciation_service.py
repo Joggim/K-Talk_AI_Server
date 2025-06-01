@@ -1,4 +1,4 @@
-from typing import List, Dict, Any, Set
+from typing import List, Dict, Any, Set, Tuple, Any
 from difflib import SequenceMatcher
 from app.services.g2p_service import convert_to_phonemes_with_mapping
 from app.services.phonology_service import apply_phonological_variants
@@ -26,13 +26,22 @@ def diff_by_type(
     user_chars,
     allowed_variants,
     correct_original_phs,
-    user_original_phs
+    user_original_phs,
+    correct_positions,
+    user_positions
 ):
     diff = []
     char_errors = {}
     error_analysis = []
 
     matcher = SequenceMatcher(None, correct_phs, user_phs)
+
+    def find_near_same_jamo(pos_list, base_idx, jamo_idx):
+        for delta in range(-2, 3):
+            idx = base_idx + delta
+            if 0 <= idx < len(pos_list) and pos_list[idx][1] == jamo_idx:
+                return idx
+        return None
 
     for tag, i1, i2, j1, j2 in matcher.get_opcodes():
         if tag == "equal":
@@ -45,7 +54,21 @@ def diff_by_type(
             cp = correct_phs[correct_idx] if tag != "insert" and correct_idx is not None else ""
             up = user_phs[user_idx] if tag != "delete" and user_idx is not None else ""
 
-            # 허용된 변형이면 무시
+            # 위치 보정
+            if correct_idx is not None and user_idx is not None:
+                if correct_positions[correct_idx][1] != user_positions[user_idx][1]:
+                    new_user_idx = find_near_same_jamo(user_positions, user_idx, correct_positions[correct_idx][1])
+                    if new_user_idx is not None:
+                        user_idx = new_user_idx
+                        up = user_phs[user_idx]
+
+            # 원본 자모가 같은 경우 무시
+            if correct_idx is not None and user_idx is not None:
+                if correct_idx < len(correct_original_phs) and user_idx < len(user_original_phs):
+                    if correct_original_phs[correct_idx] == user_original_phs[user_idx]:
+                        continue
+
+            # 허용된 발음 변형이면 무시
             if cp and up:
                 test = correct_phs[:]
                 if correct_idx is not None:
@@ -53,15 +76,14 @@ def diff_by_type(
                 if ''.join(test) in allowed_variants:
                     continue
 
+            # 자모 위치 불일치시 wrong을 공백 처리
+            if tag == "replace" and correct_idx is not None and user_idx is not None:
+                if correct_positions[correct_idx][1] != user_positions[user_idx][1]:
+                    up = ""
+
             # 공백이면 무시
             if (cp == "" and up == " ") or (cp == " " and up == "") or (cp in string.punctuation):
                 continue
-            
-            # 원본 자모가 같은 경우 오류로 간주하지 않음
-            if correct_idx is not None and user_idx is not None:
-                if correct_idx < len(correct_original_phs) and user_idx < len(user_original_phs):
-                    if correct_original_phs[correct_idx] == user_original_phs[user_idx]:
-                        continue
 
             # diff 저장
             diff.append({
@@ -131,10 +153,10 @@ def diff_by_type(
             error_analysis.append({
                 "target": cp,
                 "user": up,
-                "jamoIndex": jamo_type,
+                "jamoIndex": correct_positions[correct_idx][1],  # 정확한 위치
                 "prev": prev,
                 "next": next_ph,
-                "errorIndex": user_char_idx
+                "errorIndex": user_mapping[user_idx] if user_idx is not None else -1
             })
 
     return {
@@ -144,8 +166,8 @@ def diff_by_type(
     }
 
 def evaluate_pronunciation_with_index(reference: str, user_text: str) -> Dict[str, Any]:
-    correct_phonemes, correct_mapping, correct_chars, correct_types, correct_original_phs = convert_to_phonemes_with_mapping(reference)
-    user_phonemes, user_mapping, user_chars, user_types, user_original_phs = convert_to_phonemes_with_mapping(user_text)
+    correct_phonemes, correct_mapping, correct_chars, correct_types, correct_original_phs, correct_positions = convert_to_phonemes_with_mapping(reference)
+    user_phonemes, user_mapping, user_chars, user_types, user_original_phs, user_positions = convert_to_phonemes_with_mapping(user_text)
 
     allowed_variants = apply_phonological_variants(''.join(correct_phonemes))
 
@@ -160,7 +182,9 @@ def evaluate_pronunciation_with_index(reference: str, user_text: str) -> Dict[st
         user_chars=user_chars,
         allowed_variants=allowed_variants,
         correct_original_phs=correct_original_phs,
-        user_original_phs=user_original_phs
+        user_original_phs=user_original_phs,
+        correct_positions=correct_positions,
+        user_positions=user_positions
     )
 
     filtered_user_phonemes = [
