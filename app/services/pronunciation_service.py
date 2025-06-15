@@ -6,15 +6,6 @@ import string
 from IPAkor.transcription import UniTranscript
 t = UniTranscript()
 
-def safe_get(chars, mapping, idx):
-    if idx is None:
-        return ""
-    if 0 <= idx < len(mapping):
-        mapped = mapping[idx]
-        if 0 <= mapped < len(chars):
-            return chars[mapped]
-    return ""
-
 def diff_by_type(
     correct_phs,
     user_phs,
@@ -28,7 +19,9 @@ def diff_by_type(
     correct_original_phs,
     user_original_phs,
     correct_positions,
-    user_positions
+    user_positions,
+    reference,
+    user_text
 ):
     from collections import defaultdict
     from difflib import SequenceMatcher
@@ -130,19 +123,19 @@ def diff_by_type(
             mapped_idx = correct_mapping[correct_idx] if correct_idx is not None and correct_idx < len(correct_mapping) else -1
 
             # default
-            wrong_char = safe_get(user_chars, user_mapping, user_idx)
+            wrong_char = safe_get(user_text, user_mapping, user_idx)
 
             # 종성 누락일 경우 fallback
             if tag in ("delete", "replace") and correct_idx is not None:
                 jamo_type = correct_types[correct_idx]
                 mapped_idx = correct_mapping[correct_idx]
-                correct_char = correct_chars[mapped_idx] if 0 <= mapped_idx < len(correct_chars) else ""
+                correct_char = reference[mapped_idx] if 0 <= mapped_idx < len(correct_chars) else ""
 
                 if jamo_type == 2 and up == "":
                     # 종성 누락 → 초/중 발음은 했으므로 같은 글자나 직전 글자에서 추정
-                    wrong_char = user_chars[mapped_idx] if 0 <= mapped_idx < len(user_chars) else ""
+                    wrong_char = user_text[mapped_idx] if 0 <= mapped_idx < len(user_text) else ""
                     if not wrong_char.strip() and mapped_idx - 1 >= 0:
-                        wrong_char = user_chars[mapped_idx - 1]
+                        wrong_char = user_text[mapped_idx - 1]
 
                 if mapped_idx != -1 and mapped_idx not in char_errors:
                     char_errors[mapped_idx] = {
@@ -173,7 +166,7 @@ def diff_by_type(
                 error_index = user_mapping[user_idx] if user_idx is not None else -1
 
             if not (up == "" and error_index == -1):
-                if char_errors[error_index]["wrong"] != "":
+                if error_index in char_errors and char_errors[error_index]["wrong"] != "":
                     error_analysis.append({
                         "target": cp,
                         "user": up,
@@ -208,7 +201,9 @@ def evaluate_pronunciation_with_index(reference: str, user_text: str) -> Dict[st
         correct_original_phs=correct_original_phs,
         user_original_phs=user_original_phs,
         correct_positions=correct_positions,
-        user_positions=user_positions
+        user_positions=user_positions,
+        reference = reference,
+        user_text = user_text
     )
 
     filtered_user_phonemes = [
