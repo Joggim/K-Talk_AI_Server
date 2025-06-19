@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from pydantic import BaseModel
 from app.services.talkbot_service import get_bot_reply
-from app.services.stt_service import transcribe_wav2vec, transcribe_whisper
+from app.services.stt_service import transcribe_wav2vec
 from app.services.grammar_service import get_grammar_feedback
 from app.services.pronunciation_service import evaluate_pronunciation_with_index
 

@@ -1,6 +1,5 @@
 fastapi
 uvicorn[standard]
-openai-whisper @ git+https://github.com/openai/whisper.git
 g2pk
 python-multipart
 pydantic

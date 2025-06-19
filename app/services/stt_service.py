@@ -4,7 +4,6 @@ import tempfile
 
 import torch
 import soundfile as sf
-import whisper
 from fastapi import HTTPException, UploadFile
 from pydub import AudioSegment
 from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor
@@ -15,9 +14,6 @@ wav2vec_model_name = "kresnik/wav2vec2-large-xlsr-korean"
 wav2vec_processor = Wav2Vec2Processor.from_pretrained(wav2vec_model_name)
 wav2vec_model = Wav2Vec2ForCTC.from_pretrained(wav2vec_model_name)
 wav2vec_model.eval()
-
-# Whisper 모델 초기화
-whisper_model = whisper.load_model("base")
 
 def convert_to_wav_linear16(input_path: str, output_path: str):
     audio = AudioSegment.from_file(input_path)
@@ -60,26 +56,6 @@ async def transcribe_wav2vec(file: UploadFile) -> str:
         for path in [original_path, temp_wav_path]:
             if os.path.exists(path):
                 os.remove(path)
-
-
-async def transcribe_whisper(file: UploadFile) -> str:
-    temp_file_path = "temp_audio.wav"
-
-    # 파일 저장
-    with open(temp_file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
-    try:
-        # STT 수행 (언어 명시!)
-        result = whisper_model.transcribe(
-            temp_file_path,
-            temperature=0.0,
-            language="ko"
-        )
-        return result["text"]
-    finally:
-        # 임시 파일 삭제
-        os.remove(temp_file_path)
 
 async def transcribe_google_stt(file: UploadFile) -> str:
     try:
