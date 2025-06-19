@@ -27,7 +27,6 @@ FastAPI 기반으로 구성되어 있으며, Spring Boot 기반의 메인 서버
 | 오류 분석     | Rule-based + PyTorch MLP     |
 | 추천        | GPT-4o                        |
 | 배포        | Docker                       |
-| 저장소       | AWS S3                       |
 | 문서화       | FastAPI Swagger UI (`/docs`) |
 
 
@@ -74,17 +73,12 @@ GOOGLE_APPLICATION_CREDENTIALS=credentials.json
 - OpenAI: https://platform.openai.com/api-keys
     - 개인 계정의 API 키 생성 후 .env에 복사
 
-### 2. 모델 및 리소스 준비
--mlp_pronunciation_classifier.pt를 /models 디렉토리에 배치
-
--Google TTS 서비스 계정 키 JSON을 /app/credentials/에 저장
-
-### 3. Docker 이미지 빌드
+### 2. Docker 이미지 빌드
 ```bash
 docker build -t ktalk-ai_server .
 ```
 
-### 4. Docker 컨테이너 실행
+### 3. Docker 컨테이너 실행
 ```bash
 docker run --env-file .env -p 8000:8000 ktalk-ai-server
 ```
@@ -112,6 +106,8 @@ docker run --env-file .env -p 8000:8000 ktalk-ai-server
 |  📘 문장 추천 |POST | `/recommend-sentence` | 오류 유형 태그 입력 → 문장 추천 |
 |🔤 IPA 변환|	POST|	`/ipa`|	텍스트 입력 → IPA 변환|
 > 🔧 전체 API 요청/응답 상세는 Swagger UI(`/swagger-ui/index.html`)에서 확인할 수 있습니다. (서버 실행 시 접근 가능)
+
+<br>
 
 ## 🛰️ 외부 API 및 모델
 
