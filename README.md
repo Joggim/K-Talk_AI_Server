@@ -36,16 +36,18 @@ FastAPI 기반으로 구성되어 있으며, Spring Boot 기반의 메인 서버
 ## 📁 프로젝트 구조
 
 ```
-service/
-├── stt_service.py                # wav2vec2 기반 STT 처리
-├── tts_service.py                # Google TTS API 호출
-├── pronunciation_service.py      # 전체 발음 분석 로직
-├── classify_error_service.py     # rule 기반 오류 분류
-├── predict_error_service.py      # MLP 기반 오류 예측
-├── recommendation_service.py     # 사용자 맞춤 문장 추천
-├── grammar_service.py            # 문법 피드백 생성
-├── talkbot_service.py            # 챗봇 응답 생성
-└── g2p_service.py                # G2P 변환 처리
+.
+├── app/
+│   ├── api/                  # FastAPI 라우터
+│   ├── services/             # STT, TTS, 오류 분석, 추천 등 기능별 서비스
+│   ├── models/               # 학습된 모델 로딩
+│   ├── utils/                
+│   └── __init__.py
+├── main.py                  
+├── Dockerfile                # 컨테이너 실행 설정
+├── requirements.txt          
+├── .env                      # 환경변수 설정
+
 
 ```
 
