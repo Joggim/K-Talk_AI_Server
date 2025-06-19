@@ -8,11 +8,11 @@ FastAPI 기반으로 구성되어 있으며, Spring Boot 기반의 메인 서버
 
 ## 📌 주요 기능
 
-사용자 발음 STT (wav2vec2 + g2pk)
-텍스트 TTS (Google Text-to-Speech)
-발음 오류 분석 및 rule/MLP 기반 오류 유형 분류
-사용자 맞춤 문장 추천 (GPT 기반)
-사용자 입력 문법 피드백 및 챗봇 응답
+- 사용자 발음 STT (wav2vec2 + g2pk)
+- 텍스트 TTS (Google Text-to-Speech)
+- 발음 오류 분석 및 rule/MLP 기반 오류 유형 분류
+- 사용자 맞춤 문장 추천 (GPT 기반)
+- 사용자 입력 문법 피드백 및 챗봇 응답
 
 <br>
 
