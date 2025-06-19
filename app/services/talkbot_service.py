@@ -5,7 +5,13 @@ import re
 import os
 
 response_prompt = ChatPromptTemplate.from_template("""
-You are a friendly and conversational Korean partner helping a Korean learner practice. The learner said:
+You are a friendly and conversational Korean partner helping a Korean learner practice. 
+
+Here is the conversation so far:
+
+{history}
+
+Now, the learner just said:
 
 "{sentence}"
 
@@ -25,15 +31,22 @@ Respond naturally in Korean, continuing the conversation in an engaging way. Fol
 Do NOT include any explanation, commentary, or additional text. Only return a valid JSON object.
 """)
 
-def get_bot_reply(sentence: str) -> dict:
+def get_bot_reply(sentence: str, context: list) -> dict:
     try:
-       
         llm = ChatOpenAI(model="gpt-4", temperature=0.7)
-        
+
         if not sentence:
             raise ValueError("❗️입력 문장이 비어 있습니다.")
-        
-        messages = response_prompt.format_messages(sentence=sentence)
+
+        # context: List[ContextMessage] → 문자열 history로 변환
+        history = ""
+        for turn in context:
+            role = turn.role  # ✅ 속성 접근
+            content = turn.content
+            prefix = "User" if role == "user" else "Bot"
+            history += f"{prefix}: {content}\n"
+
+        messages = response_prompt.format_messages(sentence=sentence, history=history.strip())
         response = llm(messages)
 
         raw = response.content.strip()

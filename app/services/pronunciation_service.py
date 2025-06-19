@@ -63,7 +63,7 @@ def diff_by_type(
                 if mapped_idx not in char_errors:
                     char_errors[mapped_idx] = {
                         "wrong": "",
-                        "correct": correct_chars[mapped_idx],
+                        "correct": reference[mapped_idx],
                         "index": mapped_idx
                     }
             i1 = i2 - 1

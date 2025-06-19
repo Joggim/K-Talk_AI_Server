@@ -1,5 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from pydantic import BaseModel
+from typing import List, Literal
 from app.services.talkbot_service import get_bot_reply
 from app.services.stt_service import transcribe_wav2vec
 from app.services.grammar_service import get_grammar_feedback
@@ -7,8 +8,13 @@ from app.services.pronunciation_service import evaluate_pronunciation_with_index
 
 router = APIRouter()
 
+class ContextMessage(BaseModel):
+    role: Literal["user", "bot"]
+    content: str
+
 class ChatReplyRequest(BaseModel):
     text: str
+    context: List[ContextMessage]
 
 @router.post("/chat/feedback")
 async def chat_message(
@@ -45,14 +51,13 @@ async def chat_message(
 @router.post("/chat/reply")
 async def chat_response(request: ChatReplyRequest):
     """
-    텍스트 입력을 받아 챗봇 응답을 생성
+    텍스트 + context를 받아 챗봇 응답을 생성
     """
     try:
-        reply = get_bot_reply(request.text)
+        reply = get_bot_reply(request.text, request.context)
         return {
             "content": reply.get("content", "알겠습니다!"),
-            "translation": reply.get("translation", "Okay!"),
-            "modelAudioUrl": "audio_path" # tts 구현하고 연결
+            "translation": reply.get("translation", "Okay!")
         }
     except Exception as e:
         print("🔥 Chat Response Error:", e) 
