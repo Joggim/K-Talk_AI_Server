@@ -76,6 +76,7 @@ GOOGLE_APPLICATION_CREDENTIALS=credentials.json
 
 ### 2. 모델 및 리소스 준비
 -mlp_pronunciation_classifier.pt를 /models 디렉토리에 배치
+
 -Google TTS 서비스 계정 키 JSON을 /app/credentials/에 저장
 
 ### 3. Docker 이미지 빌드
