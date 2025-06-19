@@ -117,7 +117,7 @@ docker run --env-file .env -p 8000:8000 ktalk-ai-server
 
 |서비스/API|	설명 |	사용 목적  |	링크      |                                       
 |---------|--------|-------------------------------------------------|------|
-| Google Cloud Text-to-Speech | 텍스트를 자연스러운 음성으로 합성하는 클라우드 API  |학습문장 모범 발음 생성 |https://cloud.google.com/text-to-speech?hl=ko |
+| Google Cloud Text-to-Speech | 텍스트를 자연스러운 음성으로 합성하는 클라우드 API |학습문장 모범 발음 생성 |https://cloud.google.com/text-to-speech?hl=ko |
 | Google Cloud Speech-to-Text | 한국어 음성을 텍스트로 바꿔주는 모델 |채팅 STT 기능 구현 |https://cloud.google.com/speech-to-text?hl=ko |
 | OpenAI GPT-4o | 대화 응답, 문법 피드백, 문장 추천에 사용되는 자연어 처리 모델 |챗봇 응답 생성, 추천 문장 생성 |https://openai.com |
 | HuggingFace Wav2Vec2 | 한국어 음성 인식용 사전학습 모델 |STT 기능 구현 | https://huggingface.co/docs/transformers/model_doc/wav2vec2|
