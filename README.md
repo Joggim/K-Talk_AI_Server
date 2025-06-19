@@ -25,8 +25,7 @@ FastAPI 기반으로 구성되어 있으며, Spring Boot 기반의 메인 서버
 | STT       | wav2vec2 + g2pk              |
 | TTS       | Google Cloud TTS             |
 | 오류 분석     | Rule-based + PyTorch MLP     |
-| 추천        | GPT-4 + LangChain            |
-| 문법 분석     | KoNLPy 기반 rule system        |
+| 추천        | GPT-4o                        |
 | 배포        | Docker                       |
 | 저장소       | AWS S3                       |
 | 문서화       | FastAPI Swagger UI (`/docs`) |
@@ -59,55 +58,32 @@ service/
 루트 디렉토리에 `.env` 파일을 생성하고 아래와 같이 환경변수를 설정합니다:
 
 ```dotenv
-DB_URL=jdbc:mysql://[DB_HOST]:[PORT]/[DB_NAME]
-DB_USERNAME=[YOUR_DB_USERNAME]
-DB_PASSWORD=[YOUR_DB_PASSWORD]
-DB_DRIVER=com.mysql.cj.jdbc.Driver
-
-AWS_S3_BUCKET_NAME=[YOUR_BUCKET]
-AWS_ACCESS_KEY=[YOUR_ACCESS_KEY]
-AWS_SECRET_KEY=[YOUR_SECRET_KEY]
-
-GOOGLE_CLIENT_ID=[YOUR_GOOGLE_CLIENT_ID]
-GOOGLE_CLIENT_SECRET=[YOUR_GOOGLE_CLIENT_SECRET]
-
-AI_SERVER_URL=http://[AI_SERVER_HOST]:[PORT]
+OPENAI_API_KEY=your-openai-api-key
+GOOGLE_APPLICATION_CREDENTIALS=credentials.json
 ```
-- `DB_URL` : MySQL 데이터베이스 접속 URL (ex. `jdbc:mysql://localhost:3306/ktalk`)
-- `DB_USERNAME` : 데이터베이스 사용자 이름
-- `DB_PASSWORD` : 데이터베이스 비밀번호
-- `DB_DRIVER` : JDBC 드라이버 클래스 (default: `com.mysql.cj.jdbc.Driver`)
-- `AWS_S3_BUCKET_NAME` : AWS S3 버킷 이름
-- `AWS_ACCESS_KEY` : AWS 접근 키 (Access Key)
-- `AWS_SECRET_KEY` : AWS 비밀 키 (Secret Key)
-- `GOOGLE_CLIENT_ID` : Google OAuth2 클라이언트 ID
-- `GOOGLE_CLIENT_SECRET` : Google OAuth2 클라이언트 비밀 키
-- `AI_SERVER_URL` : 발음 평가용 AI 서버 주소 (ex. `http://localhost:8000`)
+- `OPENAI_API_KEY L` :OpenAI GPT API 호출을 위한 키 (ex. 발음 오류 분류, 피드백 생성 등)
+- `GOOGLE_APPLICATION_CREDENTIALS ` : Google Cloud Speech-to-Text 사용 시 필요한 서비스 계정 인증 키 JSON 파일 경로.
+   일반적으로 credentials.json
 
-필요한 설정은 `application.properties`에서 `.env`를 불러와 사용합니다.
+> ⚠️ GOOGLE_APPLICATION_CREDENTIALS는 Google Cloud Console에서 발급한 서비스 계정 키 파일입니다.
+> 해당 파일(credentials.json)을 프로젝트 루트에 두고, 콘솔에서 다음 경로에서 발급받아야 합니다:
+- Google: https://console.cloud.google.com/apis/credentials
+    - OAuth 또는 STT용 서비스 계정 키 생성 후 JSON 다운로드
+- OpenAI: https://platform.openai.com/api-keys
+    - 개인 계정의 API 키 생성 후 .env에 복사
 
-> ⚠️ `AWS_ACCESS_KEY`, `AWS_SECRET_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`은  
-> 각자 **AWS 콘솔**과 **Google Cloud Console**에서 직접 발급받아야 합니다.
-- AWS: [https://console.aws.amazon.com/iam](https://console.aws.amazon.com/iam)
-    - S3 버킷 권한이 포함된 IAM 사용자를 생성하고 키를 발급하세요.
-- Google: [https://console.cloud.google.com/apis/credentials](https://console.cloud.google.com/apis/credentials)
-    - OAuth 2.0 클라이언트 ID를 생성하고 리디렉션 URI 설정 필요
-
-### 2. JAR 파일 빌드
-```bash
-./gradlew build
-```
-> 빌드 완료 후 `build/libs/*.jar` 파일이 생성됩니다.
+### 2. 모델 및 리소스 준비
+-mlp_pronunciation_classifier.pt를 /models 디렉토리에 배치
+-Google TTS 서비스 계정 키 JSON을 /app/credentials/에 저장
 
 ### 3. Docker 이미지 빌드
 ```bash
-docker build -t ktalk-backend .
+docker build -t ktalk-ai_server .
 ```
-> Dockerfile은 루트 디렉토리에 있어야 하며, 위에서 생성된 JAR이 존재해야 합니다.
 
 ### 4. Docker 컨테이너 실행
 ```bash
-docker run --env-file .env -p 8080:8080 ktalk-backend
+docker run --env-file .env -p 8000:8000 ktalk-ai-server
 ```
 > 실행 후 `http://localhost:8080`에서 API에 접근할 수 있습니다.
 
@@ -115,7 +91,7 @@ docker run --env-file .env -p 8080:8080 ktalk-backend
 - Docker 엔진이 실행 중이어야 함
   - Windows/macOS 사용자는 Docker Desktop 실행 필요
   - Linux 사용자는 sudo systemctl start docker 등으로 도커 데몬 실행
-- JAR 파일이 없을 경우 COPY 단계에서 빌드 실패가 발생
+
 
 <br>
 
@@ -123,17 +99,23 @@ docker run --env-file .env -p 8080:8080 ktalk-backend
 
 | 분류      | 메서드 | 경로                                              | 설명 |
 |---------|--------|-------------------------------------------------|------|
-| 📘 학습 주제 | GET | `/api/topics`                                   | 학습 주제 목록 조회 |
-|         | GET | `/api/topics/{topicId}/sentences`               | 주제별 문장 목록 조회 |
-| 📚 문장   | GET | `/api/sentences/{sentenceId}`                   | 문장 상세 조회 |
-|         | POST | `/api/sentences/{sentenceId}/feedback`          | 문장 발음 피드백 저장 |
-| 🧾 학습 기록 | GET | `/api/user/learning-history`                    | 사용자 학습 이력 조회 |
-| 🔊 변환   | POST | `/api/convert/tts`                              | 텍스트 → 음성 변환 (TTS) |
-|         | POST | `/api/convert/stt`                              | 음성 → 텍스트 변환 (STT) |
-| 💬 채팅   | POST | `/api/chat/reply`                               | AI 채팅 응답 생성 |
-|         | POST | `/api/chat/feedback`                            | 채팅 피드백 저장 |
-|         | GET | `/api/chat/messages`                            | 채팅 메시지 목록 조회 |
-| ❗ 발음 오류 | GET | `/api/pronunciation-issue`                      | 전체 발음 오류 유형 조회 |
-|         | GET | `/api/pronunciation-issue/{issueId}`            | 오류 유형 상세 조회 |
-|         | GET | `/api/pronunciation-issue/{issueId}/error-logs` | 오류 유형별 사용자 발음 기록 |
+| 🔊 STT | POST | `/stt/wave2vec2`                                   | 음성 파일 → 텍스트 변환 |
+|         | POST | `/stt/google-stt`               | 사용자음성 -> 채팅변환 |
+| 🗣️ TTS   |POST | `/tts`                   | 텍스트 → Google TTS 음성 생성 |
+| 🧪 발음 분석| POST | `/feedback/pronunciation`                    | 정답 vs 사용자 발음 비교, 오류 리턴 |
+| ✏️ 문법 분석| POST | `/feedback/grammar`                               | 사용자발화 문법 검증 |
+| 💬 챗봇 응답| POST | `/chat/reply`                            |텍스트 입력을 받아 응답 생성 |
+| ❗ 오류 분류 | POST |  `/classify`                      | 자모 벡터 입력 → 오류 유형 예측 |
+|  📘 문장 추천 |POST | `/recommend-sentence` | 오류 유형 태그 입력 → 문장 추천 |
+|🔤 IPA 변환|	POST|	`/ipa`|	텍스트 입력 → IPA 변환|
 > 🔧 전체 API 요청/응답 상세는 Swagger UI(`/swagger-ui/index.html`)에서 확인할 수 있습니다. (서버 실행 시 접근 가능)
+
+## 🛰️ 외부 API 및 모델
+
+|서비스/API|	설명 |	사용 목적|	링크    |                                       
+|---------|--------|-------------------------------------------------|------|
+| Google Cloud Text-to-Speech | 텍스트를 자연스러운 음성으로 합성하는 클라우드 API |학습문장 모범 발음 생성 |https://cloud.google.com/text-to-speech?hl=ko |
+| Google Cloud Speech-to-Text | 한국어 음성을 텍스트로 바꿔주는 모델 |채팅 STT 기능 구현 |https://cloud.google.com/speech-to-text?hl=ko |
+| OpenAI GPT-4o | 대화 응답, 문법 피드백, 문장 추천에 사용되는 자연어 처리 모델 |챗봇 응답 생성, 추천 문장 생성 |https://openai.com |
+| HuggingFace Wav2Vec2 | 한국어 음성 인식용 사전학습 모델 |STT 기능 구현 | https://huggingface.co/docs/transformers/model_doc/wav2vec2|
+
